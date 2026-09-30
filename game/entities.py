@@ -22,9 +22,25 @@ class Player:
         if self._valid(nr, walls, rows, cols): self.rect=nr
 
     def _valid(self, rect, walls, rows, cols):
-        for px,py in [(rect.left,rect.top),(rect.right-1,rect.top),(rect.left,rect.bottom-1),(rect.right-1,rect.bottom-1)]:
-            cr,cc=py//CELL,px//CELL
-            if not(0<=cr<rows and 0<=cc<cols): return False
+        # Stay inside the maze bounds
+        if rect.left < 0 or rect.top < 0 or rect.right > cols*CELL or rect.bottom > rows*CELL:
+            return False
+
+        # Only check cells near the player (rect can touch neighbouring cells' walls)
+        r0 = max(0, rect.top // CELL - 1)
+        r1 = min(rows - 1, rect.bottom // CELL + 1)
+        c0 = max(0, rect.left // CELL - 1)
+        c1 = min(cols - 1, rect.right // CELL + 1)
+
+        T = 2  # half wall thickness (walls are drawn 3px wide)
+        for r in range(r0, r1 + 1):
+            for c in range(c0, c1 + 1):
+                x, y = c*CELL, r*CELL
+                w = walls[r][c]  # [top, bottom, right, left]
+                if w[0] and rect.colliderect(pygame.Rect(x-T, y-T, CELL+2*T, 2*T)): return False
+                if w[1] and rect.colliderect(pygame.Rect(x-T, y+CELL-T, CELL+2*T, 2*T)): return False
+                if w[2] and rect.colliderect(pygame.Rect(x+CELL-T, y-T, 2*T, CELL+2*T)): return False
+                if w[3] and rect.colliderect(pygame.Rect(x-T, y-T, 2*T, CELL+2*T)): return False
         return True
 
     def draw(self, screen):
