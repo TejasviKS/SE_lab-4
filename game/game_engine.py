@@ -1,3 +1,4 @@
+import random
 import pygame
 from game.maze import generate_maze, CELL
 from game.entities import Player, Enemy
@@ -12,6 +13,7 @@ BASE_INTERVAL = 20      # starting enemy move_interval (frames between moves)
 RAMP_EVERY_MS = 15000   # speed up every 15 seconds
 RAMP_STEP = 2           # reduce move_interval by this much each tier
 MIN_INTERVAL = 5        # enemies never move faster than this
+PELLET_RADIUS = 9
 
 class GameEngine:
     def __init__(self):
@@ -39,6 +41,13 @@ class GameEngine:
         self.won = False
         self.start_ticks = pygame.time.get_ticks()
         self.speed_tier = 0
+        # Power pellet: random cell, avoiding start, exit and enemy corners
+        excluded = {(0, 0), (ROWS//2, COLS//2), (ROWS-1, COLS-1), (0, COLS-1), (ROWS-1, 0)}
+        cells = [(r, c) for r in range(ROWS) for c in range(COLS) if (r, c) not in excluded]
+        pr, pc = random.choice(cells)
+        self.pellet_rect = pygame.Rect(0, 0, PELLET_RADIUS*2, PELLET_RADIUS*2)
+        self.pellet_rect.center = (pc*CELL + CELL//2, pr*CELL + CELL//2)
+        self.pellet_active = True
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -56,6 +65,10 @@ class GameEngine:
 
         keys = pygame.key.get_pressed()
         self.player.move(keys, self.walls, ROWS, COLS)
+        if self.pellet_active and self.player.rect.colliderect(self.pellet_rect):
+            self.pellet_active = False
+            for enemy in self.enemies:
+                enemy.freeze()
         for enemy in self.enemies:
             enemy.move_interval = interval
             enemy.update(self.walls, self.player, ROWS, COLS)
@@ -78,6 +91,9 @@ class GameEngine:
         pygame.draw.rect(self.screen,(80,200,80),self.exit_rect,border_radius=4)
         lbl=self.exit_font.render("EXIT",True,(20,80,20))
         self.screen.blit(lbl,lbl.get_rect(center=self.exit_rect.center))
+        if self.pellet_active:
+            pygame.draw.circle(self.screen, (255, 215, 0), self.pellet_rect.center, PELLET_RADIUS)
+            pygame.draw.circle(self.screen, (200, 150, 0), self.pellet_rect.center, PELLET_RADIUS, 2)
         self.player.draw(self.screen)
         for enemy in self.enemies:
             enemy.draw(self.screen)

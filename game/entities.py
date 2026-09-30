@@ -3,6 +3,7 @@ from game.maze import CELL, bfs
 
 SPEED = 3        # straight movement (pixels per frame)
 DIAG_SPEED = 2   # per axis when moving diagonally (2 * 1.41 ≈ 2.83, close to 3)
+FREEZE_FRAMES = 300   # 5 seconds at 60 FPS
 
 class Player:
     def __init__(self, r, c):
@@ -61,10 +62,24 @@ class Enemy:
         cx, cy = c*CELL+CELL//2, r*CELL+CELL//2
         self.rect = pygame.Rect(cx-12, cy-12, 24, 24)
         self.color = (220, 60, 60)
+        self.frozen_color = (120, 190, 255)
         self.timer = 0
         self.move_interval = 20  # frames between cell moves
+        self.frozen = False
+        self.freeze_timer = 0
+
+    def freeze(self, frames=FREEZE_FRAMES):
+        self.frozen = True
+        self.freeze_timer = frames
 
     def update(self, walls, player, rows, cols):
+        # While frozen: count down and do nothing else
+        if self.frozen:
+            self.freeze_timer -= 1
+            if self.freeze_timer <= 0:
+                self.frozen = False
+            return
+
         self.timer += 1
         if self.timer >= self.move_interval:
             self.timer = 0
@@ -77,7 +92,13 @@ class Enemy:
                 self.rect.center = (cx, cy)
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
+        color = self.frozen_color if self.frozen else self.color
+        pygame.draw.rect(screen, color, self.rect, border_radius=5)
+        if self.frozen:
+            # white outline + bar showing remaining freeze time
+            pygame.draw.rect(screen, (255, 255, 255), self.rect, width=2, border_radius=5)
+            bar_w = int(self.rect.width * self.freeze_timer / FREEZE_FRAMES)
+            pygame.draw.rect(screen, (255, 255, 255), (self.rect.x, self.rect.y - 7, bar_w, 4))
         # eyes
         for ex in [self.rect.x+4, self.rect.x+14]:
             pygame.draw.circle(screen, (255,255,255), (ex, self.rect.y+8), 4)
