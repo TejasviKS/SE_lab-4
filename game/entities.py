@@ -1,12 +1,11 @@
 import pygame
-from game.maze import CELL
+from game.maze import CELL, bfs
 
 SPEED = 3        # straight movement (pixels per frame)
 DIAG_SPEED = 2   # per axis when moving diagonally (2 * 1.41 ≈ 2.83, close to 3)
 
 class Player:
     def __init__(self, r, c):
-        self.r, self.c = r, c
         cx, cy = c*CELL+CELL//2, r*CELL+CELL//2
         self.rect = pygame.Rect(cx-10, cy-10, 20, 20)
         self.color = (60, 120, 220)
@@ -66,7 +65,6 @@ class Enemy:
         self.move_interval = 20  # frames between cell moves
 
     def update(self, walls, player, rows, cols):
-        from game.maze import bfs
         self.timer += 1
         if self.timer >= self.move_interval:
             self.timer = 0
