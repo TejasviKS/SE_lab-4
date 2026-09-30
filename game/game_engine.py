@@ -48,6 +48,7 @@ class GameEngine:
         self.pellet_rect = pygame.Rect(0, 0, PELLET_RADIUS*2, PELLET_RADIUS*2)
         self.pellet_rect.center = (pc*CELL + CELL//2, pr*CELL + CELL//2)
         self.pellet_active = True
+        self.score = 0
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -57,6 +58,7 @@ class GameEngine:
 
     def update(self):
         if self.caught or self.won: return
+        self.score += 1
 
         # Difficulty ramp: one tier per RAMP_EVERY_MS of play time
         elapsed = pygame.time.get_ticks() - self.start_ticks
@@ -105,6 +107,8 @@ class GameEngine:
         tier_text = "Speed: MAX" if interval == MIN_INTERVAL else f"Speed: {self.speed_tier + 1}"
         tier = self.hud_font.render(tier_text, True, (255, 200, 80))
         self.screen.blit(tier, tier.get_rect(midright=(WIDTH-8, ROWS*CELL+25)))
+        score_lbl = self.hud_font.render(f"Survived: {self.score // 60}s", True, (200, 255, 200))
+        self.screen.blit(score_lbl, score_lbl.get_rect(midleft=(290, ROWS*CELL+25)))
         if self.caught:
             self._overlay("CAUGHT!", (220,60,60))
         if self.won:
@@ -116,9 +120,12 @@ class GameEngine:
         surf.fill((0,0,0,140))
         self.screen.blit(surf,(0,0))
         msg=self.big_font.render(text,True,color)
+        score=self.font.render(f"Survived: {self.score // 60}s",True,(255,255,255))
         sub=self.font.render("Press R to Restart",True,(200,200,200))
-        self.screen.blit(msg,(WIDTH//2-msg.get_width()//2,ROWS*CELL//2-30))
-        self.screen.blit(sub,(WIDTH//2-sub.get_width()//2,ROWS*CELL//2+20))
+        cy=ROWS*CELL//2
+        self.screen.blit(msg,(WIDTH//2-msg.get_width()//2,cy-40))
+        self.screen.blit(score,(WIDTH//2-score.get_width()//2,cy+10))
+        self.screen.blit(sub,(WIDTH//2-sub.get_width()//2,cy+45))
 
     def run(self):
         running=True
