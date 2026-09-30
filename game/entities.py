@@ -1,7 +1,8 @@
 import pygame
 from game.maze import CELL
 
-SPEED = 2
+SPEED = 3        # straight movement (pixels per frame)
+DIAG_SPEED = 2   # per axis when moving diagonally (2 * 1.41 ≈ 2.83, close to 3)
 
 class Player:
     def __init__(self, r, c):
@@ -11,15 +12,24 @@ class Player:
         self.color = (60, 120, 220)
 
     def move(self, keys, walls, rows, cols):
-        dx=dy=0
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]: dx=-SPEED
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]: dx=SPEED
-        if keys[pygame.K_UP] or keys[pygame.K_w]: dy=-SPEED
-        if keys[pygame.K_DOWN] or keys[pygame.K_s]: dy=SPEED
-        nr = self.rect.move(dx,0)
-        if self._valid(nr, walls, rows, cols): self.rect=nr
-        nr = self.rect.move(0,dy)
-        if self._valid(nr, walls, rows, cols): self.rect=nr
+        left  = keys[pygame.K_LEFT]  or keys[pygame.K_a]
+        right = keys[pygame.K_RIGHT] or keys[pygame.K_d]
+        up    = keys[pygame.K_UP]    or keys[pygame.K_w]
+        down  = keys[pygame.K_DOWN]  or keys[pygame.K_s]
+
+        # Opposite keys cancel out (-1, 0 or 1)
+        dx = int(right) - int(left)
+        dy = int(down) - int(up)
+
+        # Use a smaller step on each axis when moving diagonally
+        speed = DIAG_SPEED if (dx and dy) else SPEED
+        dx *= speed
+        dy *= speed
+
+        nr = self.rect.move(dx, 0)
+        if self._valid(nr, walls, rows, cols): self.rect = nr
+        nr = self.rect.move(0, dy)
+        if self._valid(nr, walls, rows, cols): self.rect = nr
 
     def _valid(self, rect, walls, rows, cols):
         # Stay inside the maze bounds
